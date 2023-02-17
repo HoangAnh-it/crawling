@@ -32,7 +32,7 @@ func getType(url string) string {
 
 func makeRequest(url string) (*http.Response, error) {
 	client := http.Client{
-		Timeout: time.Second * 15,
+		Timeout: time.Second * 30,
 	}
 
 	request, err := http.NewRequest("GET", url, nil)
@@ -58,6 +58,10 @@ func doRequest(url string) *http.Response {
 		panic(err)
 	}
 
+	if response == nil {
+		panic(fmt.Sprintln("No data in", url))
+	}
+
 	if response.StatusCode != 200 {
 		panic(fmt.Sprintf("GET %s return status: %d\n", url, response.StatusCode))
 	}
@@ -73,19 +77,24 @@ func Crawling(url string) {
 	links := regexpUrl.FindAllStringSubmatch(responseText, -1)
 
 	for _, link := range links {
+		date := link[1]
+		folderPath := createFolder(date)
+
 		concurrency.JobList <- concurrency.NewJob(func() {
-			concurrency.WG.Add(1)
-			date := link[1]
 			linkFileText := fmt.Sprintf("https://malshare.com/daily/%s/malshare_fileList.%s.all.txt", date, date)
 			responseContent := doRequest(linkFileText)
+			defer func() {
+				if responseContent != nil {
+					responseContent.Body.Close()
+				}
+			}()
 			content := convertToResponseText(responseContent)
-			saveToLocal(date, content)
-			concurrency.WG.Done()
+			saveToLocal(folderPath, content)
 		})
 	}
 }
 
-func saveToLocal(date string, content string) {
+func saveToLocal(folderPath string, content string) {
 	contentFile := strings.Fields(content)
 	var md5, sha1, sha256, base64 []string
 	length := len(contentFile)
@@ -95,7 +104,6 @@ func saveToLocal(date string, content string) {
 		sha256 = append(sha256, contentFile[i+2])
 		base64 = append(base64, contentFile[i+3])
 	}
-	folderPath := createFolder(date)
 	createFile(strings.Join(md5, "\t"), "md5.txt", folderPath)
 	createFile(strings.Join(sha1, "\t"), "sha1.txt", folderPath)
 	createFile(strings.Join(sha256, "\t"), "sha256.txt", folderPath)

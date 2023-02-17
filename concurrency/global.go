@@ -5,5 +5,6 @@ import (
 )
 
 var (
-	WG = sync.WaitGroup{}
+	WG      = sync.WaitGroup{}
+	JobList = make(chan job)
 )

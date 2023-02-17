@@ -11,7 +11,7 @@ const (
 
 func main() {
 	URL := "https://malshare.com/daily/"
-	manager := concurrency.NewManager(5)
+	manager := concurrency.NewManager(100)
 	manager.Do(func() {
 		utils.Crawling(URL)
 	})

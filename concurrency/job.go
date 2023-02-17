@@ -6,14 +6,12 @@ type job struct {
 
 func (j *job) Start() {
 	j.action()
+	WG.Done()
 }
 
 func NewJob(action func()) job {
+	WG.Add(1)
 	return job{
 		action,
 	}
 }
-
-var (
-	JobList = make(chan job)
-)
