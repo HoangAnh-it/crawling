@@ -4,6 +4,7 @@ type worker struct {
 	id         int
 	jobChannel chan job
 	WorkerPool chan chan job
+	Stop       chan bool
 }
 
 func newWorker(id int, workerPool chan chan job) *worker {
@@ -11,6 +12,7 @@ func newWorker(id int, workerPool chan chan job) *worker {
 		id:         id,
 		WorkerPool: workerPool,
 		jobChannel: make(chan job),
+		Stop:       make(chan bool),
 	}
 }
 
@@ -20,6 +22,14 @@ func (w *worker) do() {
 		case job := <-w.jobChannel:
 			job.Start()
 			w.WorkerPool <- w.jobChannel
+		case <-w.Stop:
+			return
 		}
 	}
+}
+
+func (w *worker) stop() {
+	go func() {
+		w.Stop <- true
+	}()
 }

@@ -61,10 +61,10 @@ func InsertData(date string, typeFile string) (err error) {
 		utils.CatchError(errBase64)
 		config.DB.Collection("malshare").InsertMany(ctx,
 			[]interface{}{
-				*model.CreateDate("md5", md5, date),
-				*model.CreateDate("sha1", sha1, date),
-				*model.CreateDate("sha256", sha256, date),
-				*model.CreateDate("base64", base64, date),
+				*model.CreateData("md5", md5, date),
+				*model.CreateData("sha1", sha1, date),
+				*model.CreateData("sha256", sha256, date),
+				*model.CreateData("base64", base64, date),
 			},
 		)
 		break

@@ -23,13 +23,6 @@ var (
 	regexpFolder = regexp.MustCompile(folderPattern)
 )
 
-func getType(url string) string {
-	if strings.HasSuffix(url, ".all.txt") {
-		return "file"
-	}
-	return "folder"
-}
-
 func makeRequest(url string) (*http.Response, error) {
 	client := http.Client{
 		Timeout: time.Second * 30,

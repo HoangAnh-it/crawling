@@ -24,7 +24,7 @@ Requirement:
 Eg: curl -X POST http://localhost:8080/api/push/2002-10-31
 Note:
  + date must be formatted like yyyy-MM-dd
- + ext: is extension of file like: md5,sha1, ...
+ + ext: is name of file like: md5,sha1, ...
 ```
 
 - Get data from database
@@ -34,5 +34,5 @@ Note:
 Eg: curl -X GET http://localhost:8080/api/get/2002-10-31
 Note:
  + date must be formatted like yyyy-MM-dd
- + ext: is extension of file like: md5,sha1, ...
+ + ext: is name of file like: md5,sha1, ...
 ```

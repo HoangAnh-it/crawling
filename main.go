@@ -20,6 +20,7 @@ func main() {
 		utils.Crawling(URL)
 	})
 	concurrency.WG.Wait()
+	manager.Finish()
 
 	err := godotenv.Load(".env")
 	if err != nil {

@@ -11,7 +11,7 @@ type Data struct {
 	Date     string             `bson:"date,omitempty"`
 }
 
-func CreateDate(_type string, hashCode string, date string) *Data {
+func CreateData(_type string, hashCode string, date string) *Data {
 	return &Data{
 		Type:     _type,
 		HashCode: hashCode,
