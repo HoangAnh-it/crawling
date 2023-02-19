@@ -104,10 +104,10 @@ func saveToLocal(folderPath string, content string) {
 		sha256 = append(sha256, contentFile[i+2])
 		base64 = append(base64, contentFile[i+3])
 	}
-	createFile(strings.Join(md5, "\t"), "md5.txt", folderPath)
-	createFile(strings.Join(sha1, "\t"), "sha1.txt", folderPath)
-	createFile(strings.Join(sha256, "\t"), "sha256.txt", folderPath)
-	createFile(strings.Join(base64, "\t"), "base64.txt", folderPath)
+	createFile(strings.Join(md5, " "), "md5.txt", folderPath)
+	createFile(strings.Join(sha1, " "), "sha1.txt", folderPath)
+	createFile(strings.Join(sha256, " "), "sha256.txt", folderPath)
+	createFile(strings.Join(base64, " "), "base64.txt", folderPath)
 }
 
 func createFolder(date string) string {
