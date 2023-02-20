@@ -1,25 +1,25 @@
 package concurrency
 
 type Manager struct {
-	MaxWorkers int
-	WorkerPool chan chan job
-	Stop       chan bool
-	workers    []*worker
+	MaxWorkers  int
+	workerPool  chan chan job
+	stopChannel chan bool
+	workers     []*worker
 }
 
 func NewManager(maxWorkers int) *Manager {
 	pool := make(chan chan job, maxWorkers)
 	return &Manager{
-		MaxWorkers: maxWorkers,
-		WorkerPool: pool,
-		Stop:       make(chan bool),
+		MaxWorkers:  maxWorkers,
+		workerPool:  pool,
+		stopChannel: make(chan bool),
 	}
 }
 
 func (manager *Manager) Do(seeder func()) {
 	for i := 0; i < manager.MaxWorkers; i++ {
-		w := newWorker(i, manager.WorkerPool)
-		manager.WorkerPool <- w.jobChannel
+		w := newWorker(i, manager.workerPool)
+		manager.workerPool <- w.jobChannel
 		manager.workers = append(manager.workers, w)
 		go w.do()
 	}
@@ -35,10 +35,10 @@ func (manager *Manager) watch() {
 	for {
 		select {
 		case job := <-JobList:
-			jobChannel := <-manager.WorkerPool
+			jobChannel := <-manager.workerPool
 			jobChannel <- job
 
-		case <-manager.Stop:
+		case <-manager.stopChannel:
 			for _, w := range manager.workers {
 				w.stop()
 			}
@@ -48,5 +48,5 @@ func (manager *Manager) watch() {
 }
 
 func (manager *Manager) Finish() {
-	manager.Stop <- true
+	manager.stopChannel <- true
 }

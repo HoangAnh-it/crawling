@@ -1,18 +1,18 @@
 package concurrency
 
 type worker struct {
-	id         int
-	jobChannel chan job
-	WorkerPool chan chan job
-	Stop       chan bool
+	id          int
+	jobChannel  chan job
+	workerPool  chan chan job
+	stopChannel chan bool
 }
 
 func newWorker(id int, workerPool chan chan job) *worker {
 	return &worker{
-		id:         id,
-		WorkerPool: workerPool,
-		jobChannel: make(chan job),
-		Stop:       make(chan bool),
+		id:          id,
+		workerPool:  workerPool,
+		jobChannel:  make(chan job),
+		stopChannel: make(chan bool),
 	}
 }
 
@@ -21,8 +21,8 @@ func (w *worker) do() {
 		select {
 		case job := <-w.jobChannel:
 			job.Start()
-			w.WorkerPool <- w.jobChannel
-		case <-w.Stop:
+			w.workerPool <- w.jobChannel
+		case <-w.stopChannel:
 			return
 		}
 	}
@@ -30,6 +30,6 @@ func (w *worker) do() {
 
 func (w *worker) stop() {
 	go func() {
-		w.Stop <- true
+		w.stopChannel <- true
 	}()
 }

@@ -1,12 +1,13 @@
 package utils
 
 import (
+	"crawling/model"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 )
 
-func convertToResponseText(response *http.Response) string {
+func ConvertToResponseText(response *http.Response) string {
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Println(err)
@@ -20,4 +21,12 @@ func convertToResponseText(response *http.Response) string {
 
 	responsePlainText := string(res)
 	return responsePlainText
+}
+
+func ConvertToInterface(data []model.Data) []interface{} {
+	results := make([]interface{}, 0, len(data))
+	for _, d := range data {
+		results = append(results, d)
+	}
+	return results
 }

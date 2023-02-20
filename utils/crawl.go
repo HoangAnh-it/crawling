@@ -2,6 +2,8 @@ package utils
 
 import (
 	"crawling/concurrency"
+	"crawling/config"
+	"crawling/model"
 	"errors"
 	"fmt"
 	"net/http"
@@ -13,14 +15,16 @@ import (
 )
 
 const (
-	urlPattern    = `href="(\d{4}-\d{2}-\d{2})/"`
-	folderPattern = `\d{4}-\d{2}-\d{2}`
-	OUTPUT_PATH   = "output"
+	urlPattern      = `href="(\d{4}-\d{2}-\d{2})/"`
+	folderPattern   = `\d{4}-\d{2}-\d{2}`
+	OUTPUT_PATH     = "output"
+	hashCodePattern = `(\s?[a-f0-9]{32}\b)?(\s[0-9a-f]{40}\b)?(\s[A-Fa-f0-9]{64}\b)?(\s[a-zA-Z0-9:\+/]+\b)?`
 )
 
 var (
-	regexpUrl    = regexp.MustCompile(urlPattern)
-	regexpFolder = regexp.MustCompile(folderPattern)
+	regexpUrl     = regexp.MustCompile(urlPattern)
+	regexpFolder  = regexp.MustCompile(folderPattern)
+	regexHashCode = regexp.MustCompile(hashCodePattern)
 )
 
 func makeRequest(url string) (*http.Response, error) {
@@ -66,7 +70,7 @@ func doRequest(url string) *http.Response {
 func Crawling(url string) {
 	response := doRequest(url)
 	defer response.Body.Close()
-	responseText := convertToResponseText(response)
+	responseText := ConvertToResponseText(response)
 	links := regexpUrl.FindAllStringSubmatch(responseText, -1)
 
 	for _, link := range links {
@@ -81,26 +85,43 @@ func Crawling(url string) {
 					responseContent.Body.Close()
 				}
 			}()
-			content := convertToResponseText(responseContent)
-			saveToLocal(folderPath, content)
+			content := ConvertToResponseText(responseContent)
+			saveToLocal(folderPath, date, content)
 		})
 	}
 }
 
-func saveToLocal(folderPath string, content string) {
-	contentFile := strings.Fields(content)
-	var md5, sha1, sha256, base64 []string
-	length := len(contentFile)
-	for i := 0; i+3 < length; i = i + 4 {
-		md5 = append(md5, contentFile[i])
-		sha1 = append(sha1, contentFile[i+1])
-		sha256 = append(sha256, contentFile[i+2])
-		base64 = append(base64, contentFile[i+3])
+func saveToLocal(folderPath string, date string, content string) {
+	lines := strings.Split(content, "\n")
+	var md5Arr, sha1Arr, sha256Arr, base64Arr []string
+	var data []model.Data
+	for _, line := range lines {
+		line = " " + strings.TrimSpace(line)
+		matchString := regexHashCode.FindAllStringSubmatch(line, -1)[0]
+		md5 := strings.TrimSpace(matchString[1])
+		sha1 := strings.TrimSpace(matchString[2])
+		sha256 := strings.TrimSpace(matchString[3])
+		base64 := strings.TrimSpace(matchString[4])
+
+		md5Arr = append(md5Arr, md5)
+		sha1Arr = append(sha1Arr, sha1)
+		sha256Arr = append(sha256Arr, sha256)
+		base64Arr = append(base64Arr, base64)
+
+		data = append(data, model.Data{
+			Md5:    md5,
+			Sha1:   sha1,
+			Sha256: sha256,
+			Base64: base64,
+			Date:   date,
+		})
 	}
-	createFile(strings.Join(md5, " "), "md5.txt", folderPath)
-	createFile(strings.Join(sha1, " "), "sha1.txt", folderPath)
-	createFile(strings.Join(sha256, " "), "sha256.txt", folderPath)
-	createFile(strings.Join(base64, " "), "base64.txt", folderPath)
+
+	createFile(strings.Join(md5Arr, " "), "md5.txt", folderPath)
+	createFile(strings.Join(sha1Arr, " "), "sha1.txt", folderPath)
+	createFile(strings.Join(sha256Arr, " "), "sha256.txt", folderPath)
+	createFile(strings.Join(base64Arr, " "), "base64.txt", folderPath)
+	go config.DBController.InsertMany(ConvertToInterface(data))
 }
 
 func createFolder(date string) string {
@@ -119,12 +140,12 @@ func createFolder(date string) string {
 func createFile(content string, name string, folderPath string) {
 	path := filepath.Join(folderPath, name)
 	file, err := os.Create(path)
-	defer file.Close()
 	if err != nil {
 		fmt.Println("Cannot create file: ", path)
 		fmt.Println(err)
 		return
 	}
+	defer file.Close()
 	defer func() {
 		if err := file.Close(); err != nil {
 			fmt.Println(err)

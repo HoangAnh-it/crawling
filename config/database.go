@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"crawling/model"
 	"fmt"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -12,10 +13,14 @@ import (
 )
 
 var (
-	DB *mongo.Database
+	DBController *DatabaseController
 )
 
-func ConnectToMongo() {
+type DatabaseController struct {
+	DB *mongo.Database
+}
+
+func (db *DatabaseController) ConnectToMongo() {
 	USER_NAME := os.Getenv("MONGO_USER_NAME")
 	PASSWORD := os.Getenv("MONGO_PASSWORD")
 	CLUSTOR := os.Getenv("MONGO_CLUSTOR")
@@ -40,5 +45,35 @@ func ConnectToMongo() {
 	}
 	fmt.Println("Connect to mongo successfully.")
 
-	DB = client.Database(MONGO_DATABASE)
+	DBController = &DatabaseController{}
+	DBController.DB = client.Database(MONGO_DATABASE)
+}
+
+func (db *DatabaseController) InsertOne(data model.Data) {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	_, err := db.DB.Collection("malshare").InsertOne(ctx, data)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (db *DatabaseController) InsertMany(data []interface{}) {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	_, err := db.DB.Collection("malshare").InsertMany(ctx, (data))
+	if err != nil {
+		panic(err)
+	}
 }
